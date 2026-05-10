@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fingerprint Blood Group Detection | AI System</title>
+<style>
+  :root {
+    --bg:#0f1117; --surface:#1a1d27; --surface2:#22263a; --border:#2e3352;
+    --accent:#6366f1; --accent2:#8b5cf6; --red:#ef4444; --green:#22c55e;
+    --amber:#f59e0b; --text:#e2e8f0; --muted:#94a3b8;
+    --shadow:0 4px 24px rgba(0,0,0,.4);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh}
+
+  header{background:linear-gradient(135deg,#1a1d27,#0f1117);border-bottom:1px solid var(--border);
+    padding:18px 40px;display:flex;align-items:center;gap:16px}
+  .logo{font-size:28px;display:flex;align-items:center}
+  .htext h1{font-size:20px;font-weight:700}
+  .htext p{font-size:12px;color:var(--muted);margin-top:2px}
+  .badge{margin-left:auto;background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.4);
+    color:#818cf8;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600;display:flex;align-items:center;gap:6px}
+
+  .container{max-width:1200px;margin:0 auto;padding:32px 24px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+  @media(max-width:768px){.grid{grid-template-columns:1fr}}
+
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:16px;
+    padding:24px;box-shadow:var(--shadow)}
+  .card-title{font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;
+    letter-spacing:1px;margin-bottom:16px}
+
+  .upload-zone{border:2px dashed var(--border);border-radius:12px;padding:40px 20px;
+    text-align:center;cursor:pointer;transition:all .25s}
+  .upload-zone:hover,.drag-over{border-color:var(--accent);background:rgba(99,102,241,.06)}
+  .upload-zone h3{font-size:16px;margin-bottom:6px}
+  .upload-zone p{color:var(--muted);font-size:13px}
+  #fileInput{display:none}
+
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border-radius:10px;
+    border:none;cursor:pointer;font-size:14px;font-weight:600;transition:all .2s}
+  .btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff}
+  .btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(99,102,241,.4)}
+  .btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
+  .btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+
+  .img-wrap{background:var(--surface2);border:1px solid var(--border);border-radius:12px;
+    min-height:140px;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}
+  .img-wrap img{width:100%;max-height:200px;object-fit:contain}
+  .img-label{position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.7);
+    padding:2px 8px;border-radius:20px;font-size:10px;color:var(--muted)}
+
+  .blood-badge{text-align:center;padding:24px;
+    background:linear-gradient(135deg,rgba(99,102,241,.15),rgba(139,92,246,.15));
+    border:1px solid rgba(99,102,241,.3);border-radius:14px;margin-bottom:20px}
+  .blood-badge .lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+  .blood-badge .val{font-size:56px;font-weight:900;
+    background:linear-gradient(135deg,#6366f1,#8b5cf6);-webkit-background-clip:text;
+    -webkit-text-fill-color:transparent;line-height:1.1}
+  .blood-badge .conf{font-size:15px;color:var(--green);margin-top:6px;font-weight:600}
+
+  .meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+  .chip{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px}
+  .chip .cl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px}
+  .chip .cv{font-size:14px;font-weight:700;margin-top:3px}
+
+  .prob-row{display:flex;align-items:center;gap:10px;margin-bottom:7px}
+  .prob-lbl{width:36px;font-size:12px;font-weight:600;color:var(--muted);text-align:right}
+  .prob-bar-bg{flex:1;background:var(--surface2);border-radius:6px;height:16px;overflow:hidden}
+  .prob-bar{height:100%;border-radius:6px;transition:width .6s cubic-bezier(.4,0,.2,1);
+    background:linear-gradient(90deg,var(--accent),var(--accent2))}
+  .prob-val{width:44px;font-size:11px;color:var(--muted)}
+
+  .pipeline{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:16px 0}
+  .ps{background:var(--surface2);border:1px solid var(--border);border-radius:8px;
+    padding:8px 12px;font-size:11px;text-align:center}
+  .ps .sn{font-size:9px;color:var(--accent);font-weight:700}
+  .pa{color:var(--muted);font-size:14px}
+
+  .top3{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+  .t3{background:var(--surface2);border:1px solid var(--border);border-radius:8px;
+    padding:8px 14px;text-align:center}
+  .t3 .tbg{font-size:16px;font-weight:800}
+  .t3 .tc{font-size:11px;color:var(--muted)}
+
+  .tag{background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.3);
+    color:#818cf8;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;display:inline-block;margin:2px}
+  .tag.g{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.3);color:#4ade80}
+
+  .spinner{width:40px;height:40px;border-radius:50%;border:3px solid var(--border);
+    border-top-color:var(--accent);animation:spin .8s linear infinite;margin:0 auto 12px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  .toast{position:fixed;bottom:24px;right:24px;z-index:1000;background:var(--surface2);
+    border:1px solid var(--border);border-radius:12px;padding:12px 20px;font-size:13px;
+    box-shadow:var(--shadow);transform:translateY(80px);transition:transform .3s;pointer-events:none}
+  .toast.show{transform:translateY(0)}
+  .toast.error{border-color:var(--red);color:#fca5a5}
+
+  .alert{padding:10px 14px;border-radius:10px;font-size:13px;margin-bottom:12px;font-weight:500;display:flex;align-items:center;gap:8px}
+  .alert-warn{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);color:#fbbf24}
+  .alert-ok{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);color:#4ade80}
+  .alert-err{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:#f87171}
+
+  .section-title{font-size:22px;font-weight:700;margin-bottom:6px;
+    background:linear-gradient(135deg,#e2e8f0,#94a3b8);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  .section-sub{color:var(--muted);font-size:13px;margin-bottom:24px}
+  .divider{border:none;border-top:1px solid var(--border);margin:20px 0}
+  .hidden{display:none!important}
+
+  svg.icon{display:inline-block;vertical-align:middle;flex-shrink:0}
+</style>
+</head>
+<body>
+
+<header>
+  <span class="logo">
+    <!-- Microscope / lab icon -->
+    <svg class="icon" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M6 18H4a2 2 0 0 1-2-2v-1h20v1a2 2 0 0 1-2 2h-2"/>
+      <path d="M6 18v2h12v-2"/>
+      <path d="M12 11V6"/>
+      <circle cx="12" cy="4" r="2"/>
+      <path d="M9 11h6"/>
+    </svg>
+  </span>
+  <div class="htext">
+    <h1>Fingerprint Blood Group Detection</h1>
+    <p>Non-Invasive AI System &middot; CNN Research</p>
+  </div>
+  <span class="badge" id="modelBadge">
+    <svg class="icon" width="10" height="10" viewBox="0 0 10 10"><circle cx="5" cy="5" r="5" fill="#94a3b8"/></svg>
+    Checking model&hellip;
+  </span>
+</header>
+
+<div class="container">
+  <div class="section-title">AI-Powered Non-Invasive Detection</div>
+  <div class="section-sub">Upload any fingerprint image — CNN extracts ridge patterns and classifies blood group.</div>
+
+  <div class="pipeline">
+    <div class="ps"><div class="sn">&#9312; INPUT</div>Fingerprint Image</div>
+    <div class="pa">&rarr;</div>
+    <div class="ps"><div class="sn">&#9313; PREPROCESS</div>CLAHE + 256&times;256</div>
+    <div class="pa">&rarr;</div>
+    <div class="ps"><div class="sn">&#9314; CNN</div>4 Conv + Dense(128)</div>
+    <div class="pa">&rarr;</div>
+    <div class="ps"><div class="sn">&#9315; SOFTMAX</div>8 Classes</div>
+    <div class="pa">&rarr;</div>
+    <div class="ps"><div class="sn">&#9316; OUTPUT</div>Blood Group + Rh</div>
+  </div>
+
+  <div class="grid">
+    <!-- LEFT -->
+    <div>
+      <div class="card">
+        <div class="card-title">Upload Fingerprint</div>
+        <div class="upload-zone" id="zone">
+          <div style="margin-bottom:14px;display:flex;justify-content:center">
+            <!-- Hand / fingerprint icon -->
+            <svg class="icon" width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0"/>
+              <path d="M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2"/>
+              <path d="M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8"/>
+              <path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/>
+            </svg>
+          </div>
+          <h3>Drop fingerprint image here</h3>
+          <p>PNG, JPG, BMP, TIFF supported</p>
+          <input type="file" id="fileInput" accept=".png,.jpg,.jpeg,.bmp,.tif,.tiff">
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-secondary" onclick="document.getElementById('fileInput').click()">
+            <!-- Folder icon -->
+            <svg class="icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+            </svg>
+            Choose File
+          </button>
+          <button class="btn btn-primary hidden" id="analyzeBtn" onclick="runPrediction()">
+            <!-- Search / scan icon -->
+            <svg class="icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"/>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            Analyze Fingerprint
+          </button>
+        </div>
+
+        <div class="hidden" id="previewSection" style="margin-top:16px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div>
+              <div style="font-size:11px;color:var(--muted);margin-bottom:6px">Original</div>
+              <div class="img-wrap"><img id="origImg" src="" alt="Original"></div>
+            </div>
+            <div>
+              <div style="font-size:11px;color:var(--muted);margin-bottom:6px">After CLAHE</div>
+              <div class="img-wrap">
+                <img id="procImg" src="" alt="Processed">
+                <span class="img-label">256&times;256 &middot; [0,1]</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT -->
+    <div>
+      <!-- Loading -->
+      <div class="card hidden" id="loadingCard" style="text-align:center;padding:60px 20px">
+        <div class="spinner"></div>
+        <p style="color:var(--muted);font-size:13px">Analyzing fingerprint patterns&hellip;</p>
+        <p style="color:var(--muted);font-size:11px;margin-top:4px">CLAHE &rarr; CNN &rarr; Softmax</p>
+      </div>
+
+      <!-- Empty -->
+      <div class="card" id="emptyCard" style="text-align:center;padding:60px 20px">
+        <div style="display:flex;justify-content:center;margin-bottom:16px">
+          <!-- Blood drop icon -->
+          <svg class="icon" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2C6 10 4 14 4 16a8 8 0 0 0 16 0c0-2-2-6-8-14z"/>
+          </svg>
+        </div>
+        <h3 style="font-size:16px;margin-bottom:8px">Results will appear here</h3>
+        <p style="color:var(--muted);font-size:13px">Upload a fingerprint image to begin analysis</p>
+      </div>
+
+      <!-- Not trained -->
+      <div class="card hidden" id="noModelCard" style="text-align:center;padding:60px 20px">
+        <div style="display:flex;justify-content:center;margin-bottom:16px">
+          <!-- Warning triangle -->
+          <svg class="icon" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+        </div>
+        <h3 style="font-size:16px;margin-bottom:8px">Model Not Trained Yet</h3>
+        <div class="alert alert-warn" style="text-align:left;margin-top:16px">
+          <strong>Run these commands to train:</strong><br><br>
+          <code style="font-size:12px;display:block;background:rgba(0,0,0,.3);padding:8px;border-radius:6px;margin-top:6px">
+            python setup_dataset.py<br>
+            python train.py --model mobilenet
+          </code>
+        </div>
+      </div>
+
+      <!-- Results -->
+      <div class="card hidden" id="resultCard">
+        <div id="predAlert" style="display:none" class="alert"></div>
+        <div class="blood-badge">
+          <div class="lbl">Predicted Blood Group</div>
+          <div class="val" id="resBG">--</div>
+          <div class="conf" id="resConf">--</div>
+        </div>
+        <div class="meta-grid">
+          <div class="chip"><div class="cl">Rh Factor</div><div class="cv" id="resRh">--</div></div>
+          <div class="chip"><div class="cl">Ridge Pattern</div><div class="cv" id="resPat">--</div></div>
+          <div class="chip"><div class="cl">Prevalence</div><div class="cv" id="resPrev">--</div></div>
+          <div class="chip"><div class="cl">Model</div><div class="cv" id="resModel" style="font-size:11px">--</div></div>
+        </div>
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Top 3 Predictions</div>
+        <div class="top3" id="top3"></div>
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Class Probabilities</div>
+        <div id="probBars"></div>
+        <div id="infoSection" class="hidden" style="margin-top:20px">
+          <hr class="divider">
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px">Clinical Info</div>
+          <div style="display:flex;gap:8px;margin-bottom:8px;font-size:13px;flex-wrap:wrap">
+            <span style="color:var(--muted);min-width:100px">Can donate to:</span>
+            <div id="donorsList"></div>
+          </div>
+          <div style="display:flex;gap:8px;font-size:13px;flex-wrap:wrap">
+            <span style="color:var(--muted);min-width:100px">Can receive from:</span>
+            <div id="recipientsList"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Paper ref -->
+  <div style="margin-top:32px;padding:16px 20px;background:var(--surface);border:1px solid var(--border);border-radius:14px;font-size:12px;color:var(--muted);display:flex;align-items:flex-start;gap:10px">
+    <!-- Document icon -->
+    <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-top:1px;flex-shrink:0">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+      <polyline points="14 2 14 8 20 8"/>
+      <line x1="16" y1="13" x2="8" y2="13"/>
+      <line x1="16" y1="17" x2="8" y2="17"/>
+      <polyline points="10 9 9 9 8 9"/>
+    </svg>
+    <span>
+      <strong style="color:var(--text)">Research:</strong>
+      Thakre D., Panpatte M., Khandelwal R. &mdash; "Non-Invasive Technique for Fingerprint-Based Blood Group Identification"
+      &middot; Train: 99.47% &middot; Val: 80% &middot; F1: 0.83
+    </span>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let selectedFile = null;
+
+// ── Model badge ──────────────────────────────────────────────────────────────
+fetch('/api/model_info').then(r=>r.json()).then(d=>{
+  const b = document.getElementById('modelBadge');
+  if(d.model_type==='cnn'){
+    b.innerHTML = `<svg class="icon" width="10" height="10" viewBox="0 0 10 10"><circle cx="5" cy="5" r="5" fill="#22c55e"/></svg> CNN Ready`;
+    b.style.color='#4ade80';
+  } else {
+    b.innerHTML = `<svg class="icon" width="10" height="10" viewBox="0 0 10 10"><circle cx="5" cy="5" r="5" fill="#ef4444"/></svg> Not Trained`;
+    b.style.color='#f87171';
+  }
+}).catch(()=>{});
+
+// ── Drag & Drop ──────────────────────────────────────────────────────────────
+const zone = document.getElementById('zone');
+zone.addEventListener('dragover',e=>{e.preventDefault();zone.classList.add('drag-over')});
+zone.addEventListener('dragleave',()=>zone.classList.remove('drag-over'));
+zone.addEventListener('drop',e=>{
+  e.preventDefault();zone.classList.remove('drag-over');
+  if(e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+});
+zone.addEventListener('click',()=>document.getElementById('fileInput').click());
+document.getElementById('fileInput').addEventListener('change',e=>{
+  if(e.target.files[0]) handleFile(e.target.files[0]);
+});
+
+function handleFile(f){
+  selectedFile=f;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    document.getElementById('origImg').src=e.target.result;
+    document.getElementById('previewSection').classList.remove('hidden');
+  };
+  reader.readAsDataURL(f);
+  document.getElementById('analyzeBtn').classList.remove('hidden');
+  toast(`Selected: ${f.name}`);
+}
+
+// ── Prediction ───────────────────────────────────────────────────────────────
+async function runPrediction(){
+  if(!selectedFile) return;
+  showLoading();
+  const fd=new FormData();
+  fd.append('file',selectedFile);
+  try{
+    const res=await fetch('/api/predict',{method:'POST',body:fd});
+    const data=await res.json();
+    if(data.not_trained){showNoModel();return;}
+    if(data.error) throw new Error(data.error);
+    if(data.processed_image_b64)
+      document.getElementById('procImg').src='data:image/png;base64,'+data.processed_image_b64;
+    renderResult(data);
+  }catch(e){
+    toast('Error: '+e.message,true);
+    showEmpty();
+  }
+}
+
+const iconCheck = `<svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+const iconWarn  = `<svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`;
+const iconX     = `<svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
+
+function renderResult(d){
+  hide('loadingCard');hide('emptyCard');hide('noModelCard');
+  show('resultCard');
+
+  const conf=d.confidence;
+  const alertEl=document.getElementById('predAlert');
+  if(conf>=80){
+    alertEl.className='alert alert-ok';
+    alertEl.innerHTML=`${iconCheck} High confidence prediction (${conf}%)`;
+    alertEl.style.display='flex';
+  } else if(conf>=50){
+    alertEl.className='alert alert-warn';
+    alertEl.innerHTML=`${iconWarn} Moderate confidence (${conf}%) &mdash; consider retesting`;
+    alertEl.style.display='flex';
+  } else {
+    alertEl.className='alert alert-err';
+    alertEl.innerHTML=`${iconX} Low confidence (${conf}%) &mdash; image quality may be poor`;
+    alertEl.style.display='flex';
+  }
+
+  document.getElementById('resBG').textContent=d.blood_group;
+  document.getElementById('resConf').textContent=`Confidence: ${conf}%`;
+  document.getElementById('resRh').textContent=d.rh_factor;
+  document.getElementById('resPat').textContent=d.pattern_type;
+  document.getElementById('resPrev').textContent=(d.info||{}).prevalence||'—';
+  document.getElementById('resModel').textContent=d.model_type;
+
+  document.getElementById('top3').innerHTML=(d.top3||[]).map((t,i)=>`
+    <div class="t3">
+      <div class="tbg" style="color:${i===0?'#818cf8':'var(--text)'}">${t.blood_group}</div>
+      <div class="tc">${t.confidence}%</div>
+    </div>`).join('');
+
+  const probs=d.probabilities||{};
+  document.getElementById('probBars').innerHTML=
+    Object.entries(probs).sort((a,b)=>b[1]-a[1]).map(([bg,pct])=>`
+      <div class="prob-row">
+        <span class="prob-lbl">${bg}</span>
+        <div class="prob-bar-bg">
+          <div class="prob-bar" style="width:${Math.max(pct,1)}%;opacity:${bg===d.blood_group?1:.5}"></div>
+        </div>
+        <span class="prob-val">${pct.toFixed(1)}%</span>
+      </div>`).join('');
+
+  const info=d.info||{};
+  if(info.donors||info.recipients){
+    show('infoSection');
+    document.getElementById('donorsList').innerHTML=(info.donors||[]).map(x=>`<span class="tag">${x}</span>`).join('');
+    document.getElementById('recipientsList').innerHTML=(info.recipients||[]).map(x=>`<span class="tag g">${x}</span>`).join('');
+  }
+}
+
+function showLoading(){show('loadingCard');hide('emptyCard');hide('resultCard');hide('noModelCard')}
+function showEmpty(){hide('loadingCard');show('emptyCard');hide('resultCard');hide('noModelCard')}
+function showNoModel(){hide('loadingCard');hide('emptyCard');hide('resultCard');show('noModelCard')}
+function show(id){document.getElementById(id).classList.remove('hidden')}
+function hide(id){document.getElementById(id).classList.add('hidden')}
+function toast(msg,err=false){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className='toast show'+(err?' error':'');
+  setTimeout(()=>t.className='toast',3000);
+}
+</script>
+</body>
+</html>
